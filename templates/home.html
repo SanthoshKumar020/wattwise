@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}WattWise — AI Electricity Usage Anomaly Detector{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>⚡ WattWise</h1>
+  <p class="tagline">Spot the days your electricity bill quietly explodes.</p>
+  <p class="hero-text">
+    WattWise learns your household's normal daily electricity usage with an
+    <strong>Isolation Forest</strong> machine-learning model, flags abnormal
+    days, predicts the next 7 days of consumption with Linear Regression, and
+    estimates your monthly bill from slab rates — so a faulty appliance or a
+    forgotten AC never surprises you at billing time.
+  </p>
+  {% if session.get('user_id') %}
+    <a class="btn btn-big" href="{{ url_for('dashboard') }}">Go to my dashboard</a>
+  {% else %}
+    <a class="btn btn-big" href="{{ url_for('register') }}">Get started</a>
+    <a class="btn btn-big btn-ghost" href="{{ url_for('login') }}">Log in</a>
+  {% endif %}
+</section>
+
+<section class="cards">
+  <div class="card">
+    <h3>🌡️ Anomaly detection</h3>
+    <p>An Isolation Forest retrains on your own readings every run — units,
+    3-day and 7-day rolling averages, and day-of-week — and marks the days
+    that don't fit your pattern.</p>
+  </div>
+  <div class="card">
+    <h3>📈 7-day forecast</h3>
+    <p>A Linear Regression on your usage trend predicts the coming week's
+    daily consumption, so you can plan heavy appliance use.</p>
+  </div>
+  <div class="card">
+    <h3>🧾 Bill estimate</h3>
+    <p>Your current month's units are priced through a clearly labelled,
+    indicative domestic slab table — an estimate, not your utility's bill.</p>
+  </div>
+  <div class="card">
+    <h3>🔔 Actionable alerts</h3>
+    <p>Every abnormal day comes with how far it sits above your average and a
+    practical suggestion for what to check first.</p>
+  </div>
+</section>
+
+<section class="signs">
+  <h2>Try it in one click</h2>
+  <p class="muted">Register, then press <strong>“Load sample data”</strong> on the
+  Readings page — WattWise generates 60 days of realistic household usage with
+  a few built-in spikes and runs the analysis instantly.</p>
+</section>
+{% endblock %}

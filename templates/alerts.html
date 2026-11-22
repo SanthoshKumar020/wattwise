@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Alerts — WattWise{% endblock %}
+{% block content %}
+<section>
+  <h1>🔔 Anomaly alerts</h1>
+  {% if method %}
+  <p class="muted">Detection method: <strong>{{ method }}</strong> · your daily
+  average is <strong>{{ avg }} units</strong>.</p>
+  {% endif %}
+
+  {% if alerts %}
+  <div class="alert-list">
+    {% for a in alerts %}
+    <div class="alert-card">
+      <div class="alert-head">
+        <strong>{{ a.date }}</strong>
+        <span class="badge badge-bad">Abnormal</span>
+      </div>
+      <p><strong>{{ a.units }} units</strong> — {{ a.pct }}% above your average
+      {% if a.score is not none %}· anomaly score {{ a.score }}{% endif %}</p>
+      <p>💡 {{ a.text }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No anomalous days detected. Either your usage is steady —
+  or analysis hasn't run yet. Load readings and press
+  <strong>Run analysis</strong> on the dashboard.</p>
+  {% endif %}
+</section>
+{% endblock %}

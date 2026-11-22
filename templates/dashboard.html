@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — WattWise{% endblock %}
+{% block content %}
+<section class="dashboard">
+  <h1>Dashboard</h1>
+
+  {% if not rows %}
+    <p class="muted">No readings yet. Head to <a href="{{ url_for('readings') }}">Readings</a>
+    to add your daily units manually — or load the one-click sample data set there
+    to see WattWise in action immediately.</p>
+  {% else %}
+    {% if method %}
+      <p class="muted">Detection method: <strong>{{ method }}</strong>.
+      The model retrains on your data every time analysis runs.</p>
+    {% else %}
+      <p class="muted">Analysis has not been run on the latest data yet.</p>
+    {% endif %}
+    <form method="post" action="{{ url_for('analyze') }}">
+      <button class="btn" type="submit">🔄 Run analysis</button>
+    </form>
+
+    <div class="cards">
+      <div class="card stat">
+        <div class="stat-num">{{ stats.month_units }}</div>
+        <div class="stat-label">Total units this month</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-num">{{ stats.daily_avg }}</div>
+        <div class="stat-label">Daily average (units)</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-num">{{ stats.highest_units }}</div>
+        <div class="stat-label">Highest day — {{ stats.highest_date }}</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-num">{{ stats.anomaly_count }}</div>
+        <div class="stat-label">Anomalous days</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-num">{{ stats.predicted_tomorrow if stats.predicted_tomorrow is not none else '—' }}</div>
+        <div class="stat-label">Predicted tomorrow (units)</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-num">₹{{ bill.total }}</div>
+        <div class="stat-label">Estimated bill this month*</div>
+      </div>
+    </div>
+
+    <h2>Daily usage</h2>
+    <div class="card chart-card">
+      <canvas id="usageChart" height="110"></canvas>
+      <p class="muted">Red points are days flagged as abnormal by the model.</p>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <h2>Next 7 days — predicted usage</h2>
+        {% if predictions %}
+        <table class="table">
+          <thead><tr><th>Date</th><th>Predicted units</th></tr></thead>
+          <tbody>
+            {% for p in predictions %}
+            <tr><td>{{ p.date }}</td><td>{{ p.units }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="muted">Add at least 2 readings to see a forecast.</p>
+        {% endif %}
+      </div>
+      <div>
+        <h2>Estimated bill breakdown*</h2>
+        <table class="table">
+          <thead><tr><th>Slab</th><th>Units</th><th>Rate (₹)</th><th>Amount (₹)</th></tr></thead>
+          <tbody>
+            {% for line in bill.breakdown %}
+            <tr>
+              <td>{{ line.label }}</td>
+              <td>{{ line.units if line.units is not none else '—' }}</td>
+              <td>{{ line.rate if line.rate is not none else '—' }}</td>
+              <td>{{ line.amount }}</td>
+            </tr>
+            {% endfor %}
+            <tr><td colspan="3"><strong>Total estimate ({{ bill.month_units }} units this month)</strong></td>
+                <td><strong>₹{{ bill.total }}</strong></td></tr>
+          </tbody>
+        </table>
+        <p class="muted">*Estimate only, using an indicative domestic slab table.
+        Your actual utility tariff, duties and subsidies may differ.</p>
+      </div>
+    </div>
+
+    {% if alerts %}
+    <div class="tip-banner">
+      ⚠️ You have {{ alerts|length }} anomalous day{{ '' if alerts|length == 1 else 's' }}.
+      Latest: <strong>{{ alerts[-1].date }}</strong> used {{ alerts[-1].units }} units
+      ({{ alerts[-1].pct }}% above your average) — {{ alerts[-1].text }}
+      See all on the <a href="{{ url_for('alerts') }}">Alerts page</a>.
+    </div>
+    {% endif %}
+
+    <h2>Energy-saving tips</h2>
+    <ul class="tips">
+      {% for tip in tips %}<li>{{ tip }}</li>{% endfor %}
+    </ul>
+
+    <h2>History</h2>
+    <table class="table">
+      <thead><tr><th>Date</th><th>Units (kWh)</th><th>Status</th><th>Anomaly score</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row['date'] }}</td>
+          <td>{{ row['units'] }}</td>
+          <td>
+            {% if row['is_anomaly'] is none %}
+              <span class="badge badge-unknown">Not analysed</span>
+            {% elif row['is_anomaly'] %}
+              <span class="badge badge-bad">Abnormal</span>
+            {% else %}
+              <span class="badge badge-ok">Normal</span>
+            {% endif %}
+          </td>
+          <td>{{ row['anomaly_score'] if row['anomaly_score'] is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if rows %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  window.WATTWISE_CHART = {{ chart | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endif %}
+{% endblock %}

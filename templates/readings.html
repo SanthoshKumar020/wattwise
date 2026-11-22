@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Readings — WattWise{% endblock %}
+{% block content %}
+<section>
+  <h1>My readings</h1>
+  <p class="muted">Enter one reading per day — the units (kWh) your meter
+  advanced that day. Adding a reading for a date that already exists updates it.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>Add a reading</h3>
+      <form class="auth-form" method="post" action="{{ url_for('add_reading') }}">
+        <label>Date
+          <input type="date" name="date" value="{{ today }}" required>
+        </label>
+        <label>Units used (kWh)
+          <input type="number" name="units" step="0.01" min="0" placeholder="e.g. 5.4" required>
+        </label>
+        <button class="btn" type="submit">Save reading</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>Just exploring?</h3>
+      <p>Load 60 days of realistic sample household data (synthetic, with a few
+      built-in usage spikes). This <strong>replaces</strong> your current readings
+      and runs the analysis straight away.</p>
+      <form method="post" action="{{ url_for('load_sample') }}">
+        <button class="btn" type="submit">⚡ Load sample data</button>
+      </form>
+    </div>
+  </div>
+
+  {% if rows %}
+  <h2>All readings ({{ rows|length }})</h2>
+  <table class="table">
+    <thead><tr><th>Date</th><th>Units (kWh)</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row['date'] }}</td>
+        <td>{{ row['units'] }}</td>
+        <td>
+          {% if row['is_anomaly'] is none %}
+            <span class="badge badge-unknown">Not analysed</span>
+          {% elif row['is_anomaly'] %}
+            <span class="badge badge-bad">Abnormal</span>
+          {% else %}
+            <span class="badge badge-ok">Normal</span>
+          {% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('delete_reading', reading_id=row['id']) }}"
+                onsubmit="return confirm('Delete the reading for {{ row['date'] }}?');">
+            <button class="btn btn-small btn-danger" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No readings yet — add your first one above.</p>
+  {% endif %}
+</section>
+{% endblock %}
